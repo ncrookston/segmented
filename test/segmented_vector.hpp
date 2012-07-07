@@ -15,43 +15,46 @@ namespace segmented
 {
   namespace aux
   {
-    template <typename outer_range>
+    template <typename segment_range>
     struct const_correct_typedefs
     {
-      typedef typename boost::range_iterator<outer_range>::type outer_iterator;
-      typedef typename boost::mpl::eval_if_c< boost::is_const<outer_range>::value,
+      typedef typename boost::range_iterator<segment_range>::type
+        segment_iterator;
+      typedef typename boost::mpl::eval_if_c<
+        boost::is_const<segment_range>::value,
         boost::add_const<typename boost::range_value<
-          typename boost::remove_const<outer_range>::type >::type >,
-        boost::range_value<outer_range> >::type inner_range;
+          typename boost::remove_const<segment_range>::type >::type>,
+        boost::range_value<segment_range>
+      >::type local_range;
 
-      typedef typename boost::range_iterator<inner_range>::type inner_iterator;
-      typedef typename boost::iterator_reference<inner_iterator>::type inner_reference;
-      typedef typename boost::remove_const<inner_reference>::type inner_value;
+      typedef typename boost::range_iterator<local_range>::type local_iterator;
+      typedef typename boost::iterator_reference<local_iterator>::type local_reference;
+      typedef typename boost::remove_const<local_reference>::type local_value;
     };//end const_correct_typedefs
   }//end aux
 
-  template <typename outer_range>
+  template <typename segment_range>
   class flattened_iterator
     : public boost::iterator_facade<
-        flattened_iterator<outer_range>,
-        typename aux::const_correct_typedefs<outer_range>::inner_value,
+        flattened_iterator<segment_range>,
+        typename aux::const_correct_typedefs<segment_range>::local_value,
         boost::forward_traversal_tag //TODO: More types.
       >
   {
-    typedef aux::const_correct_typedefs<outer_range> typedefs;
+    typedef aux::const_correct_typedefs<segment_range> typedefs;
   public:
-    typedef typename typedefs::outer_iterator outer_iterator;
-    typedef typename typedefs::inner_range inner_range;
-    typedef typename typedefs::inner_iterator inner_iterator;
-    typedef typename typedefs::inner_reference inner_reference;
+    typedef typename typedefs::segment_iterator segment_iterator;
+    typedef typename typedefs::local_range local_range;
+    typedef typename typedefs::local_iterator local_iterator;
+    typedef typename typedefs::local_reference local_reference;
 
     flattened_iterator() : in_(), out_(), out_end_()
     {}
-    flattened_iterator(outer_iterator out, outer_iterator out_end,
-                       boost::optional<inner_iterator> in)
+    flattened_iterator(segment_iterator out, segment_iterator out_end,
+                       boost::optional<local_iterator> in)
       : in_(in), out_(out), out_end_(out_end)
     {
-      if(out_ != out_end_ && in_)
+      if(in_)
         make_valid_in();
     }
 
@@ -60,10 +63,10 @@ namespace segmented
       : in_(other.in_), out_(other.out_), out_end_(other.out_end_)
     {}
 
-    outer_iterator get_outer() const
+    segment_iterator get_segment_iterator() const
     { return out_; }
 
-    inner_iterator get_inner() const
+    local_iterator get_local_iterator() const
     { return *in_; }
 
   private:
@@ -88,12 +91,16 @@ namespace segmented
         *in_ = (++out_)->begin();
     }
 
-    inner_reference dereference() const
+    local_reference dereference() const
     { BOOST_ASSERT(in_ && *in_ != out_->end()); return **in_; }
 
-    boost::optional<inner_iterator> in_;
-    outer_iterator out_, out_end_;
+    boost::optional<local_iterator> in_;
+    segment_iterator out_, out_end_;
   };//end flattened_iterator
+
+  template <typename T>
+  struct segmented_iterator_tag<flattened_iterator<T> >
+  { typedef segmented_tag type; };
 
   //Non-industrial-stregth segmented vector.
   template <typename T>
@@ -114,14 +121,14 @@ namespace segmented
 
     iterator begin()
     {
-      boost::optional<typename iterator::inner_iterator> optIn(boost::none);
-      return iterator(nodes_.begin(), end().get_outer(),
+      boost::optional<typename iterator::local_iterator> optIn(boost::none);
+      return iterator(nodes_.begin(), end().get_segment_iterator(),
         boost::empty(nodes_) ? optIn : nodes_.begin()->begin());
     }
 
     const_iterator begin() const
     {
-      return const_iterator(nodes_.begin(), end().get_outer(),
+      return const_iterator(nodes_.begin(), end().get_segment_iterator(),
         boost::empty(nodes_) ? boost::none : nodes_.begin()->begin());
     }
     
