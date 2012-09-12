@@ -1,0 +1,12 @@
+project
+  : requirements <include>. <include>c:/cygwin/home/home/boost_1_49_0
+  ;
+
+import testing ;
+
+{
+  test-suite "segmented"
+    : [ run test/fill_test.cpp ]
+      [ run test/for_each_test.cpp ]
+    ;
+}

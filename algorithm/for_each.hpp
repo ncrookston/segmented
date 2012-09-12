@@ -9,7 +9,7 @@
 namespace segmented
 {
   template <typename T, typename F> F for_each(T it, T end, F f);
-  namespace aux
+  namespace extension
   {
     template <typename T, typename F>
     F for_each(T it, T end, F f, segmented_tag)
@@ -23,12 +23,13 @@ namespace segmented
 
       if(sfirst == slast)
       {
-        f = for_each(
+        f = segmented::for_each(
           local_iterator<T>::get(it), local_iterator<T>::get(end), f);
       }
       else
       {
-        f = for_each(local_iterator<T>::get(it), boost::end(*sfirst), f);
+        f = segmented::for_each(
+          local_iterator<T>::get(it), boost::end(*sfirst), f);
         while(++sfirst != slast)
         {
           f = segmented::for_each(
@@ -44,12 +45,12 @@ namespace segmented
     F for_each(T it, T end, F f, not_segmented_tag)
     { return std::for_each(it, end, f); }
 
-  }//end aux
+  }//end extension
 
   template <typename T, typename F>
   F for_each(T it, T end, F f)
   {
-    return aux::for_each(it, end, f,
+    return extension::for_each(it, end, f,
         typename segmented_iterator_tag<T>::type());
   }
 
