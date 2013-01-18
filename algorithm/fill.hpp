@@ -10,7 +10,7 @@ namespace segmented
 {
   template <typename T, typename V> void fill(T it, T end, const V& v);
 
-  namespace extension
+  namespace aux
   {
     template <typename T, typename V>
     void fill(T it, T end, const V& v, segmented_tag)
@@ -42,7 +42,7 @@ namespace segmented
     void fill(T it, T end, const V& v, not_segmented_tag)
     { std::fill(it, end, v); }
 
-  }//end extension
+  }//end aux
 
   template <typename T, typename V>
   void fill(T it, T end, const V& v)

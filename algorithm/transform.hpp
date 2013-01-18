@@ -1,62 +1,136 @@
 #ifndef SEGMENTED_ALGORITHM_TRANSFORM_HPP
 #define SEGMENTED_ALGORITHM_TRANSFORM_HPP
 
-#include "segmented_iterator_traits.hpp"
+#include "aux/transform1.hpp"
+#if 0
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
 #include <algorithm>
 
 namespace segmented
 {
-  template <typename T, typename U, typename F> F transform(T, T, U, F);
-
-  namespace extension
+  namespace aux
   {
-    //This version only cares if T is segmented.  U's segmentation
-    // is ignored, since we have no way of knowing how the segments of U
-    // align with the segments of T.  If U and T's segments are aligned,
-    // we can be more efficient -- that is captured by a different tag type.
-    template <typename T, typename U, typename F>
-    U transform(T it, T end, U out, F f, segmented_tag)
+    //This version only cares if T is segmented.
+    template <typename T, typename U, typename V, typename F,
+              typename Tag, typename U_TAG, typename V_TAG>
+    std::pair<U,V> transform(T it1, T end1, U it2, V out, F f,
+        segmented_tag, U_TAG, V_TAG)
     {
-      if(it == end)
-        return out;
+      if(it1 == end1)
+        return std::make_pair(it2, out);
 
       typedef typename segment_iterator<T>::type out_it;
-      out_it sfirst = segment_iterator<T>::get(it);
-      out_it slast  = segment_iterator<T>::get(end);
+      out_it sfirst1 = segment_iterator<T>::get(it1);
+      out_it slast1  = segment_iterator<T>::get(end1);
 
       if(sfirst == slast)
       {
-        return segmented::transform(
-          local_iterator<T>::get(it), local_iterator<T>::get(end), out, f);
+        return aux::transform(
+          local_iterator<T>::get(it1), local_iterator<T>::get(end1),
+          it2, out, f);
       }
       else
       {
-        out = segmented::transform(
-          local_iterator<T>::get(it), boost::end(*sfirst), out, f);
+        boost::tie(it2, out) = aux::transform(
+          local_iterator<T>::get(it), boost::end(*sfirst), it2, out, f);
         while(++sfirst != slast)
         {
-          out = segmented::transform(
-              boost::begin(*sfirst), boost::end(*sfirst), out, f);
+          boost::tie(it2, out) = aux::transform(
+              boost::begin(*sfirst), boost::end(*sfirst), it2, out, f);
         }
-        return segmented::transform(
-              boost::begin(*slast), local_iterator<T>::get(end), out, f);
+        return aux::transform(
+              boost::begin(*slast), local_iterator<T>::get(end), it2, out, f);
+      }
+    }
+    //This version only cares if U is segmented, U's local iterators are
+    // random access, and T is random access:
+    template <typename T, typename U, typename V, typename F,
+              typename Tag,
+              typename T_SEGMENT_TAG,
+              typename V_SEGMENT_TAG>
+    std::pair<U,V> transform(T it1, T end1, U it2, V out, F f,
+        T_TAG, segmented_tag, V_TAG)
+    {
+      while(it1 != end1)
+      {
+        local_iterator<U>::type lit2 = local_iterator<U>::get(it2);
+        boost::tie(lit2, out) = aux::transform(
+      }
+      return std::make_pair(it2, out);
+
+      typedef typename segment_iterator<T>::type out_it;
+      out_it sfirst1 = segment_iterator<T>::get(it1);
+      out_it slast1  = segment_iterator<T>::get(end1);
+
+      if(sfirst == slast)
+      {
+        return aux::transform(
+          local_iterator<T>::get(it1), local_iterator<T>::get(end1),
+          it2, out, f);
+      }
+      else
+      {
+        boost::tie(it2, out) = aux::transform(
+          local_iterator<T>::get(it), boost::end(*sfirst), it2, out, f);
+        while(++sfirst != slast)
+        {
+          boost::tie(it2, out) = aux::transform(
+              boost::begin(*sfirst), boost::end(*sfirst), it2, out, f);
+        }
+        return aux::transform(
+              boost::begin(*slast), local_iterator<T>::get(end), it2, out, f);
       }
     }
 
-    template <typename T, typename U, typename F>
-    U transform(T it, T end, U out, F f, not_segmented_tag)
-    { return std::transform(it, end, out, f); }
+    template <typename T, typename U, typename V, typename F,
+      typename T_TRAVERSE_TAG, typename U_SEGMENT_TAG,
+      typename U_TRAVERSE_TAG, typename V_SEGMENT_TAG,
+      typename V_TRAVERSE_TAG>
+    std::pair<U,V> transform(T it1, T end1, U it2, V out, F f,
+        not_segmented_tag, T_TRAVERSE_TAG,
+        U_SEGMENT_TAG,     U_TRAVERSE_TAG,
+        V_SEGMENT_TAG,     V_TRAVERSE_TAG)
+    {
+      //NOTE: It would be nice to use the std version here, but when this is
+      // called from a segmented version we need the incremented it2 and out.
+      //return std::transform(it1, end1, it2, out, f);
+      for(; it1 != end1; ++it1, ++it2, ++out)
+        *out = f(*it1, *it2);
+      return std::make_pair(it2, out);
+    }
 
-  }//end extension
+    template <typename T, typename U, typename V, typename F,
+      typename T_TRAVERSE_TAG, typename U_SEGMENT_TAG,
+      typename U_TRAVERSE_TAG, typename V_SEGMENT_TAG,
+      typename V_TRAVERSE_TAG>
+    std::pair<U,V> transform(T it1, T end1, U it2, V out, F f,
+        not_segmented_tag, T_TRAVERSE_TAG,
+        U_SEGMENT_TAG,     U_TRAVERSE_TAG,
+        V_SEGMENT_TAG,     V_TRAVERSE_TAG)
+    {
+      //NOTE: It would be nice to use the std version here, but when this is
+      // called from a segmented version we need the incremented it2 and out.
+      //return std::transform(it1, end1, it2, out, f);
+      for(; it1 != end1; ++it1, ++it2, ++out)
+        *out = f(*it1, *it2);
+      return std::make_pair(it2, out);
+    }
 
-  template <typename T, typename U, typename F>
-  U transform(T it, T end, U out, F f)
-  {
-    return extension::transform(it, end, out, f,
-        typename segmented_iterator_tag<T>::type());
-  }
+    template <typename T, typename U, typename V, typename F>
+    V transform(T it1, T end1, U it2, V out, F f)
+    {
+      typedef typename segmented_iterator_tag<T>::type t_tag;
+      typedef typename segmented_iterator_tag<U>::type u_tag;
+      typedef typename segmented_iterator_tag<V>::type v_tag;
+      return transform(
+          it1, end1, it2, out, f, t_tag(), u_tag(), v_tag()).second;
+    }
+  }//end aux
+
+  template <typename T, typename U, typename V, typename F>
+  V transform(T it1, T end1, U it2, V out, F f)
+  { return aux::transform(it1, end1, it2, out, f); }
 
 }//end segmented
 

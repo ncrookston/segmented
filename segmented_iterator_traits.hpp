@@ -30,8 +30,10 @@ namespace segmented
   struct not_segmented_tag {};
 
   template <typename iterator>
-  struct segmented_iterator_tag
-  { typedef not_segmented_tag type; };
+  struct segmented_iterator_traits
+  {
+    typedef not_segmented_tag type;
+  };
 
 }//end segmented
 

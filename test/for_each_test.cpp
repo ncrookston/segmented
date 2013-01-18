@@ -32,6 +32,9 @@ int main()
   counter c = segmented::for_each(sv.begin(), sv.end(), counter());
   BOOST_TEST(std::abs(c.count - 21.f) < 1e-6f);
 
+  segmented::for_each(sv.begin(), sv.end(), [](float f)
+  { std::cout << f << std::endl; });
+
   return boost::report_errors();
 }
 

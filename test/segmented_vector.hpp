@@ -48,26 +48,26 @@ namespace segmented
     typedef typename typedefs::local_iterator local_iterator;
     typedef typename typedefs::local_reference local_reference;
 
-    flattened_iterator() : in_(), out_(), out_end_()
+    flattened_iterator() : opt_in_(), out_(), out_end_()
     {}
     flattened_iterator(segment_iterator out, segment_iterator out_end,
-                       boost::optional<local_iterator> in)
-      : in_(in), out_(out), out_end_(out_end)
+                       boost::optional<local_iterator> opt_in)
+      : opt_in_(opt_in), out_(out), out_end_(out_end)
     {
-      if(in_)
+      if(opt_in_)
         make_valid_in();
     }
 
     template <typename U>
     flattened_iterator(flattened_iterator<U> const& other)
-      : in_(other.in_), out_(other.out_), out_end_(other.out_end_)
+      : opt_in_(other.opt_in_), out_(other.out_), out_end_(other.out_end_)
     {}
 
     segment_iterator get_segment_iterator() const
     { return out_; }
 
     local_iterator get_local_iterator() const
-    { return *in_; }
+    { return *opt_in_; }
 
   private:
     friend class boost::iterator_core_access;
@@ -75,32 +75,40 @@ namespace segmented
 
     template <typename U>
     bool equal(flattened_iterator<U> const& other) const
-    { return other.out_ == out_ && other.in_ == in_; }
+    { return other.out_ == out_ && other.opt_in_ == opt_in_; }
 
     void increment()
     {
-      BOOST_ASSERT(in_);
-      ++*in_;
+      BOOST_ASSERT(opt_in_);
+      ++*opt_in_;
       make_valid_in();
     }
 
     void make_valid_in()
     {
-      BOOST_ASSERT(in_);
-      while(out_ != out_end_ && *in_ == out_->end())
-        *in_ = (++out_)->begin();
+      BOOST_ASSERT(opt_in_);
+      while(out_ != out_end_ && *opt_in_ == out_->end())
+        *opt_in_ = (++out_)->begin();
     }
 
     local_reference dereference() const
-    { BOOST_ASSERT(in_ && *in_ != out_->end()); return **in_; }
+    { BOOST_ASSERT(opt_in_ && *opt_in_ != out_->end()); return **opt_in_; }
 
-    boost::optional<local_iterator> in_;
+    boost::optional<local_iterator> opt_in_;
     segment_iterator out_, out_end_;
   };//end flattened_iterator
 
   template <typename T>
-  struct segmented_iterator_tag<flattened_iterator<T> >
-  { typedef segmented_tag type; };
+  struct segmented_iterator_traits<flattened_iterator<T> >
+  {
+    typedef segmented_tag type;
+
+    flattened_iterator<T> compose(
+        typename flattened_iterator<T>::segment_iterator s_it,
+        typename flattened_iterator<T>::segment_iterator s_end,
+        typename flattened_iterator<T>::local_iterator l_it)
+    { return flattened_iterator<T>(s_it, s_end, l_it); }
+  };
 
   //Non-industrial-stregth segmented vector.
   template <typename T>
@@ -121,15 +129,16 @@ namespace segmented
 
     iterator begin()
     {
-      boost::optional<typename iterator::local_iterator> optIn(boost::none);
-      return iterator(nodes_.begin(), end().get_segment_iterator(),
-        boost::empty(nodes_) ? optIn : nodes_.begin()->begin());
+      typename iterator::segment_iterator nodes_begin = nodes_.begin();
+      return iterator(nodes_begin, end().get_segment_iterator(),
+        boost::empty(nodes_) ? boost::optional<typename iterator::local_iterator>() : nodes_begin->begin());
     }
 
     const_iterator begin() const
     {
-      return const_iterator(nodes_.begin(), end().get_segment_iterator(),
-        boost::empty(nodes_) ? boost::none : nodes_.begin()->begin());
+      typename iterator::segment_iterator nodes_begin = nodes_.begin();
+      return const_iterator(nodes_begin, end().get_segment_iterator(),
+        boost::empty(nodes_) ? boost::none : nodes_begin->begin());
     }
     
     //Per Austern's paper: "It must be possible to obtain
