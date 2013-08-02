@@ -65,7 +65,7 @@ namespace segmented
   F for_each(T it, T end, F f)
   {
     return aux::for_each(it, end, f,
-        typename segmented_iterator_tag<T>::type());
+        typename segmented_iterator_traits<T>::type());
   }
 
 }//end segmented

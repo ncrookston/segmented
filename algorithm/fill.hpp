@@ -47,7 +47,7 @@ namespace segmented
   template <typename T, typename V>
   void fill(T it, T end, const V& v)
   {
-    extension::fill(it, end, v, typename segmented_iterator_tag<T>::type());
+    aux::fill(it, end, v, typename segmented_iterator_traits<T>::type());
   }
 
 }//end segmented

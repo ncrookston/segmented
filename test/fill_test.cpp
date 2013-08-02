@@ -1,5 +1,6 @@
 
 #include "algorithm/fill.hpp"
+#include "scoped_timer.hpp"
 #include "segmented_vector.hpp"
 
 #include <boost/assign/list_of.hpp>
@@ -11,6 +12,9 @@
 using namespace segmented;
 using namespace boost::assign;
 
+namespace
+{
+
 struct counter
 {
   counter() : count(0.f) {}
@@ -20,6 +24,8 @@ struct counter
 
   float count;
 };
+
+}//end namespace
 
 int main()
 {
@@ -37,6 +43,29 @@ int main()
   BOOST_TEST(*sIt++ == 3);
   BOOST_TEST(*sIt++ == 3);
   BOOST_TEST(sIt == sv.end());
+
+
+  {
+    typedef segmented_vector<int> sv_int;
+    sv_int::segment_list t_segs(10000, std::vector<int>(1000, 5));
+    sv_int t_sv(t_segs);
+    {
+      scoped_timer st;
+      std::fill(t_sv.begin(), t_sv.end(), 3);
+    }
+  }
+
+  {
+
+    typedef segmented_vector<int> sv_int;
+    sv_int::segment_list t_segs(10000, std::vector<int>(1000, 5));
+    sv_int t_sv(t_segs);
+
+    {
+      scoped_timer st;
+      segmented::fill(t_sv.begin(), t_sv.end(), 3);
+    }
+  }
 
   return boost::report_errors();
 }
