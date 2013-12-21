@@ -14,8 +14,8 @@ namespace segmented
 
     ~scoped_timer()
     {
-      std::cout << boost::chrono::duration<double>(
-          boost::chrono::high_resolution_clock::now() - start_) << std::endl;
+      auto stop = boost::chrono::high_resolution_clock::now();
+      std::cout << boost::chrono::duration<double>(stop - start_) << std::endl;
     }
   };//end scoped_timer
 

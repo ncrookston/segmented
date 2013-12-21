@@ -15,15 +15,14 @@ namespace segmented
     template <typename T, typename V>
     void fill(T it, T end, const V& v, segmented_tag)
     {
-      if(it == end)
-        return;
-
       typedef typename segment_iterator<T>::type out_it;
       out_it sfirst = segment_iterator<T>::get(it);
       out_it slast  = segment_iterator<T>::get(end);
 
       if(sfirst == slast)
       {
+        if(it == end)
+          return;
         segmented::fill(
           local_iterator<T>::get(it), local_iterator<T>::get(end), v);
       }

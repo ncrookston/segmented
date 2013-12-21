@@ -10,7 +10,15 @@
 #include <iostream>
 
 using namespace segmented;
-using namespace boost::assign;
+
+namespace
+{
+  struct MultByFive
+  {
+    int operator()(int i)
+    { return i * 5; }
+  };//end MultByFive
+}//end namespace
 
 int main()
 {
@@ -30,32 +38,65 @@ int main()
   sv_int sv(segs);
 
   std::vector<int> s;
-  segmented::transform(sv.begin(), sv.end(), 
-      std::back_inserter(s), [](int i)
-  { return i * 2; });
+  segmented::transform(
+      sv.begin(), sv.end(), std::back_inserter(s), MultByFive());
 
-  std::for_each(s.begin(), s.end(), [](int i)
-  { std::cout << i << std::endl; });
+  //TODO: Check values of s.
 
-  sv_int::segment_list l_segs(5000, std::vector<int>(1000));
+  sv_int emptyList;
+  segmented::transform(
+      emptyList.begin(), emptyList.end(), s.begin(), MultByFive());
+  static const int num_segs = 5000;
+  static const int local_size = 5000;
+  sv_int::segment_list l_segs(num_segs, std::vector<int>(local_size));
   sv_int large_segs(l_segs);
-  std::vector<int> normal(5000 * 1000);
-  std::vector<int> segmented(5000 * 1000);
+  std::generate(large_segs.begin(), large_segs.end(), &std::rand);
+  std::vector<int> all;
+  std::copy(large_segs.begin(), large_segs.end(), std::back_inserter(all));
 
+  //Case 0:
+  std::vector<int> stdcase0(num_segs * local_size);
+  std::vector<int> segcase0(num_segs * local_size);
+  std::cout << "One input segmented, output not-segmented time:" << std::endl;
+  std::cout << "std: ";
   {
     scoped_timer st;
-    std::transform(large_segs.begin(), large_segs.end(), normal.begin(),
-      [](int i) { return i * 5; });
+    std::transform(large_segs.begin(), large_segs.end(), stdcase0.begin(),
+      MultByFive());
   }
 
+  std::cout << "seg: ";
   {
     scoped_timer st;
     segmented::transform(large_segs.begin(), large_segs.end(),
-        segmented.begin(), [](int i) { return i * 5; });
+        segcase0.begin(), MultByFive());
   
   }
 
-  BOOST_TEST(std::equal(normal.begin(), normal.end(), segmented.begin()));
+  BOOST_TEST(std::equal(stdcase0.begin(), stdcase0.end(), segcase0.begin()));
+
+  //Case 1:
+  sv_int stdcase1(l_segs);
+  sv_int segcase1(l_segs);
+  std::cout << "One input not-segmented, output-segmented time:" << std::endl;
+  std::cout << "std: ";
+  {
+    scoped_timer st;
+    std::transform(all.begin(), all.end(), stdcase1.begin(), MultByFive());
+  }
+
+  std::cout << "seg: ";
+  {
+    scoped_timer st;
+    segmented::transform(all.begin(), all.end(),
+        segcase1.begin(), MultByFive());
+  }
+
+
+  std::cout << "One input segmented, output segmented time:" << std::endl;
+
+  std::cout << "One input not segmented, output not segmented time:" << std::endl;
+  BOOST_TEST(std::equal(stdcase1.begin(), stdcase1.end(), segcase1.begin()));
 
   return boost::report_errors();
 }

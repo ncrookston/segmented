@@ -66,6 +66,9 @@ namespace segmented
     segment_iterator get_segment_iterator() const
     { return out_; }
 
+    segment_iterator get_segment_end_iterator() const
+    { return out_end_; }
+
     local_iterator get_local_iterator() const
     { return *opt_in_; }
 
@@ -103,11 +106,14 @@ namespace segmented
   {
     typedef segmented_tag type;
 
-    flattened_iterator<T> compose(
+    static flattened_iterator<T> compose(
+        flattened_iterator<T> full_it_end,
         typename flattened_iterator<T>::segment_iterator s_it,
-        typename flattened_iterator<T>::segment_iterator s_end,
-        typename flattened_iterator<T>::local_iterator l_it)
-    { return flattened_iterator<T>(s_it, s_end, l_it); }
+        boost::optional<typename flattened_iterator<T>::local_iterator> l_it)
+    {
+      return flattened_iterator<T>(
+          s_it, full_it_end.get_segment_end_iterator(), l_it);
+    }
   };
 
   //Non-industrial-stregth segmented vector.
@@ -123,6 +129,9 @@ namespace segmented
 
     typedef flattened_iterator<segment_list> iterator;
     typedef flattened_iterator<segment_list const> const_iterator;
+
+    segmented_vector() : nodes_()
+    {}
 
     segmented_vector(const segment_list& nodes) : nodes_(nodes)
     {}
