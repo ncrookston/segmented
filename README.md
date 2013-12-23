@@ -1,1 +1,1 @@
-###Not for public consumption, no warranty.  Boost licensed, though
+###Not (yet) ready for public consumption.  Boost licensed, but use at your own risk.
