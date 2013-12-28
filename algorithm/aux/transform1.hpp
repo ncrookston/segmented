@@ -61,16 +61,26 @@ namespace segmented
       t_d_t t_dist = end - it;
       u_d_t u_dist = out_end - out;
       t_dist = std::min(t_dist, u_dist);
+#define SEGMENTED_USE_INTEGER
+#ifndef SEGMENTED_USE_INTEGER
       end = it + t_dist;
       out_end = out + t_dist;
       while(it != end)
+#else
+      for (t_d_t v = 0; v < t_dist; ++v)
+#endif
       {
         *out++ = f(*it++);
       }
+#ifndef SEGMENTED_USE_INTEGER
       return std::make_pair(end, out_end);
+#else
+      return std::make_pair(it, out);
+#endif
     }
     //TODO: Could this be slower than just using std::transform?  Is this
-    // required by other transform1 overloads?
+    // required by other transform1 overloads?  Probably, since it's possible
+    // this was called after decomposing T's containing iterator.
     template <typename T, typename U, typename F>
     std::pair<T,U> transform1(T it, T end, U out, U out_end, F f,
         boost::mpl::false_)

@@ -23,6 +23,7 @@ namespace
 int main()
 {
   typedef segmented_vector<int> sv_int;
+#if 0
   sv_int::segment_list segs(3, std::vector<int>(3));
   segs[0][0] = 0;
   segs[0][1] = 1;
@@ -46,6 +47,7 @@ int main()
   sv_int emptyList;
   segmented::transform(
       emptyList.begin(), emptyList.end(), s.begin(), MultByFive());
+#endif
   static const int num_segs = 5000;
   static const int local_size = 5000;
   sv_int::segment_list l_segs(num_segs, std::vector<int>(local_size));
@@ -53,7 +55,7 @@ int main()
   std::generate(large_segs.begin(), large_segs.end(), &std::rand);
   std::vector<int> all;
   std::copy(large_segs.begin(), large_segs.end(), std::back_inserter(all));
-
+#if 0
   //Case 0:
   std::vector<int> stdcase0(num_segs * local_size);
   std::vector<int> segcase0(num_segs * local_size);
@@ -74,31 +76,35 @@ int main()
   }
 
   BOOST_TEST(std::equal(stdcase0.begin(), stdcase0.end(), segcase0.begin()));
-
+#endif
+#if 1
   //Case 1:
   sv_int stdcase1(l_segs);
-  sv_int segcase1(l_segs);
-  std::cout << "One input not-segmented, output-segmented time:" << std::endl;
-  std::cout << "std: ";
+  //std::cout << "One input not-segmented, output-segmented time:" << std::endl;
+  //std::cout << "std: ";
   {
     scoped_timer st;
     std::transform(all.begin(), all.end(), stdcase1.begin(), MultByFive());
   }
+#endif
 
-  std::cout << "seg: ";
+#if 1
+  sv_int segcase1(l_segs);
+  //std::cout << "seg: ";
   {
     scoped_timer st;
     segmented::transform(all.begin(), all.end(),
         segcase1.begin(), MultByFive());
   }
-
-
+#endif
+#if 0
   std::cout << "One input segmented, output segmented time:" << std::endl;
 
   std::cout << "One input not segmented, output not segmented time:" << std::endl;
   BOOST_TEST(std::equal(stdcase1.begin(), stdcase1.end(), segcase1.begin()));
 
   return boost::report_errors();
+#endif
 }
 
 
