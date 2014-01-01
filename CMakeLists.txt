@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 2.8)
+project(segmented)
+set(srcs test/transform_test.cpp)
+include_directories(. "C:/Program Files (x86)/externpro 13.11-10-g609c9c8-vc100/include/boost-1_55")
+link_directories("C:/Program Files (x86)/externpro 13.11-10-g609c9c8-vc100/lib64")
+source_group("" FILES ${srcs})
+add_executable(transform_test ${srcs})
